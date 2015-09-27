@@ -1,0 +1,34 @@
+{
+  "name": "sample-angular-browserify",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "js": "gulp js"
+  },
+  "license": "MIT",
+  "devDependencies": {
+    "angular-formly": "^7.1.2",
+    "angular-mocks": "^1.4.6",
+    "api-check": "^7.5.3",
+    "babel": "^4.7.16",
+    "babel-core": "^4.7.16",
+    "babelify": "^6.3.0",
+    "browser-sync": "^2.9.3",
+    "browserify": "^11.1.0",
+    "exorcist": "^0.4.0",
+    "gulp": "^3.9.0",
+    "gulp-debug": "^2.1.0",
+    "gulp-util": "^3.0.6",
+    "vinyl-source-stream": "^1.1.0",
+    "watchify": "^3.4.0"
+  },
+  "dependencies": {
+    "angular": "^1.4.6",
+    "angular-animate": "^1.4.6",
+    "angular-aria": "^1.4.6",
+    "angular-material": "^0.11.1",
+    "angular-messages": "^1.4.6",
+    "angular-ui-router": "^0.2.15"
+  }
+}
