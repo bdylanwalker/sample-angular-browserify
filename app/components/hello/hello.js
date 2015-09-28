@@ -6,7 +6,7 @@ export default ngModule => {
       restrict: 'E',
       scope: {},
 //    template: require("hello.html"),
-      template: '{{vm.greeting}}',
+      templateUrl: 'components/hello/hello.html',
       controllerAs: 'vm',
       controller: /*@ngInject*/ function() {
         const vm = this;

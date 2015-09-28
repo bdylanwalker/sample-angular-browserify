@@ -2,6 +2,43 @@
 'use strict';
 
 Object.defineProperty(exports, '__esModule', {
+    value: true
+});
+
+exports['default'] = function (ngModule) {
+
+    ngModule.directive('entry', function () {
+        return {
+            restrict: 'E',
+            scope: {},
+            templateUrl: 'components/entry/entry.html',
+            controllerAs: 'vm',
+            controller: /*@ngInject*/function controller() {
+                var vm = this;
+            }
+        };
+    });
+};
+
+module.exports = exports['default'];
+
+},{}],2:[function(require,module,exports){
+'use strict';
+
+Object.defineProperty(exports, '__esModule', {
+    value: true
+});
+
+exports['default'] = function (ngModule) {
+    require('./entry')(ngModule);
+};
+
+module.exports = exports['default'];
+
+},{"./entry":1}],3:[function(require,module,exports){
+'use strict';
+
+Object.defineProperty(exports, '__esModule', {
   value: true
 });
 
@@ -13,7 +50,7 @@ exports['default'] = function (ngModule) {
       restrict: 'E',
       scope: {},
       //    template: require("hello.html"),
-      template: '{{vm.greeting}}',
+      templateUrl: 'components/hello/hello.html',
       controllerAs: 'vm',
       controller: /*@ngInject*/function controller() {
         var vm = this;
@@ -26,7 +63,7 @@ exports['default'] = function (ngModule) {
 
 module.exports = exports['default'];
 
-},{}],2:[function(require,module,exports){
+},{}],4:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, '__esModule', {
@@ -39,7 +76,85 @@ exports['default'] = function (ngModule) {
 
 module.exports = exports['default'];
 
-},{"./hello":1}],3:[function(require,module,exports){
+},{"./hello":3}],5:[function(require,module,exports){
+'use strict';
+
+Object.defineProperty(exports, '__esModule', {
+    value: true
+});
+
+exports['default'] = function (ngModule) {
+    require('./list')(ngModule);
+};
+
+module.exports = exports['default'];
+
+},{"./list":6}],6:[function(require,module,exports){
+'use strict';
+
+Object.defineProperty(exports, '__esModule', {
+    value: true
+});
+
+exports['default'] = function (ngModule) {
+
+    ngModule.directive('list', function () {
+        return {
+            restrict: 'E',
+            scope: {},
+            templateUrl: 'components/list/list.html',
+            controllerAs: 'vm',
+            controller: /*@ngInject*/function controller() {
+                var vm = this;
+
+                vm.todos = [{ text: "one" }, { text: "two" }, { text: "three" }];
+            }
+        };
+    });
+};
+
+module.exports = exports['default'];
+
+},{}],7:[function(require,module,exports){
+'use strict';
+
+Object.defineProperty(exports, '__esModule', {
+    value: true
+});
+
+exports['default'] = function (ngModule) {
+    require('./messages')(ngModule);
+};
+
+module.exports = exports['default'];
+
+},{"./messages":8}],8:[function(require,module,exports){
+'use strict';
+
+Object.defineProperty(exports, '__esModule', {
+    value: true
+});
+
+exports['default'] = function (ngModule) {
+
+    ngModule.directive('messages', function () {
+        return {
+            restrict: 'E',
+            scope: {},
+            templateUrl: 'components/messages/messages.html',
+            controllerAs: 'vm',
+            controller: /*@ngInject*/function controller() {
+                var vm = this;
+
+                vm.message = 'Hello Messages';
+            }
+        };
+    });
+};
+
+module.exports = exports['default'];
+
+},{}],9:[function(require,module,exports){
 'use strict';
 
 var angular = require('angular');
@@ -47,8 +162,11 @@ var angular = require('angular');
 var ngModule = angular.module('app', []);
 
 require('./components/hello')(ngModule);
+require('./components/messages')(ngModule);
+require('./components/entry')(ngModule);
+require('./components/list')(ngModule);
 
-},{"./components/hello":2,"angular":5}],4:[function(require,module,exports){
+},{"./components/entry":2,"./components/hello":4,"./components/list":5,"./components/messages":7,"angular":11}],10:[function(require,module,exports){
 /**
  * @license AngularJS v1.4.6
  * (c) 2010-2015 Google, Inc. http://angularjs.org
@@ -28875,9 +28993,9 @@ $provide.value("$locale", {
 })(window, document);
 
 !window.angular.$$csp().noInlineStyle && window.angular.element(document.head).prepend('<style type="text/css">@charset "UTF-8";[ng\\:cloak],[ng-cloak],[data-ng-cloak],[x-ng-cloak],.ng-cloak,.x-ng-cloak,.ng-hide:not(.ng-hide-animate){display:none !important;}ng\\:form{display:block;}.ng-animate-shim{visibility:hidden;}.ng-anchor{position:absolute;}</style>');
-},{}],5:[function(require,module,exports){
+},{}],11:[function(require,module,exports){
 require('./angular');
 module.exports = angular;
 
-},{"./angular":4}]},{},[3])
+},{"./angular":10}]},{},[9])
 //# sourceMappingURL=app.js.map
