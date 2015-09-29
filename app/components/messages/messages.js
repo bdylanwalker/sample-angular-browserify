@@ -1,6 +1,6 @@
 export default ngModule => {
 
-    ngModule.directive('messages', function() {
+    ngModule.directive('messages', function(source) {
         return {
             restrict: 'E',
             scope: {},
@@ -10,6 +10,13 @@ export default ngModule => {
                 const vm = this;
 
                 vm.message = 'Hello Messages';
+
+            }
+            ,
+            link: function(scope, elem, attrs){
+                source.filter(x => x % 2 === 1)
+                    .map(x => x + '!')
+                    .forEach(x => elem.append('<div>' + x + '</div>'));
             }
         };
     });
