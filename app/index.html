@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <title>Angular with Webpack</title>
 </head>
-<body ng-app="app">
+<body ng-app="app" ng-controller="appController as vm">
 <h1>Angular + Webpack</h1>
 <hello></hello>
 <hr/>
@@ -13,6 +13,10 @@
 <list></list>
 <hr/>
 <messages></messages>
+
+<hr>
+<div>Count of todos in app controller: {{vm.todos.length}}</div>
+
 <script src="js/dist/bundle.js"></script>
 </body>
 </html>

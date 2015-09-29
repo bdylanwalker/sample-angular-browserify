@@ -8,6 +8,16 @@
 
     ngModule.factory('source', () => {
         return Rx.Observable.interval(500).take(6);
+    })
+
+    ngModule.controller('appController', function() {
+        angular.extend(this, {
+
+        });
+
+        console.log(this);
+
+
     });
 
     require('./components/hello')(ngModule);

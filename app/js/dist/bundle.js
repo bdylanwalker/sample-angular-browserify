@@ -10,19 +10,26 @@ exports['default'] = function (ngModule) {
     ngModule.directive('entry', function (source) {
         return {
             restrict: 'E',
-            scope: {},
+            scope: false,
             templateUrl: 'components/entry/entry.html',
             controllerAs: 'vm',
             controller: /*@ngInject*/function controller($scope) {
-                var vm = this;
+                var _this = this;
 
+                angular.extend(this, {
+                    todos: []
+                });
+
+                //                const vm = this;
                 //how to get this back out to the main stream?
-                $scope.todos = [];
+                //                $scope.todos = [];
+
+                console.log(this.todos);
 
                 $scope.addTodo = function () {
-                    $scope.todos.push({ text: $scope.formValue });
-                    $scope.formTodoText = '';
-                    console.log($scope.formValue);
+                    _this.todos.push({ text: $scope.formValue });
+                    console.log('in entry directive, adding todo: ' + $scope.formValue);
+                    $scope.formValue = '';
                 };
             }
         };
@@ -186,6 +193,12 @@ module.exports = exports['default'];
 
     ngModule.factory('source', function () {
         return Rx.Observable.interval(500).take(6);
+    });
+
+    ngModule.controller('appController', function () {
+        angular.extend(this, {});
+
+        console.log(this);
     });
 
     require('./components/hello')(ngModule);
