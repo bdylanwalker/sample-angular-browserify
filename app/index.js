@@ -1,8 +1,9 @@
-(function() {
+(function () {
     'use strict';
 
     const angular = require('angular');
-    const Rx = require('rx');
+    var Rx = require('rx');
+    var RxAngular = require('rx-angular');
 
     const ngModule = angular.module('app', []);
 
@@ -10,10 +11,8 @@
         return Rx.Observable.interval(500).take(6);
     })
 
-    ngModule.controller('appController', function() {
-        angular.extend(this, {
-
-        });
+    ngModule.controller('appController', function () {
+        angular.extend(this, {});
 
         console.log(this);
 
