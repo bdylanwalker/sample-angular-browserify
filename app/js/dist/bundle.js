@@ -4,12 +4,11 @@
 Object.defineProperty(exports, '__esModule', {
     value: true
 });
-var Rx = require('rx');
-var RxAngular = require('rx-angular');
 
 exports['default'] = function (ngModule) {
 
-    ngModule.directive('entry', function (observeOnScope) {
+    ngModule.directive('entry', function ($log, todoSource) {
+        $log.debug('Setup entry directive');
 
         return {
             restrict: 'E',
@@ -20,23 +19,25 @@ exports['default'] = function (ngModule) {
             templateUrl: 'components/entry/entry.html',
             controllerAs: 'vm',
             controller: /*@ngInject*/function controller($scope) {
-                var _this = this;
+                var vm = this;
 
-                angular.extend(this, {
-                    todos: [],
-                    addTodo: function addTodo() {
-                        _this.todos.push({ text: $scope.formValue });
-                        console.log('in entry directive, adding todo: ' + $scope.formValue);
-                        $scope.formValue = '';
-                    }
-                });
+                //vm.todos = [];
+                //var todoStream = Rx.Observable.from( vm.todos);
+
+                vm.addTodo = function () {
+                    todoSource.addTodo($scope.formValue);
+
+                    //this.todos.push({text:$scope.formValue});
+                    $log.debug('in entry directive, adding todo: ' + $scope.formValue);
+                    $scope.formValue = '';
+                };
 
                 // Listen for changes on the name
-                observeOnScope($scope, 'formValue').subscribe(function (change) {
-                    $scope.observedChange = change;
-                    $scope.newValue = change.newValue;
-                    $scope.oldValue = change.oldValue;
-                });
+                //observeOnScope($scope, 'formValue').subscribe(function(change) {
+                //    $scope.observedChange = change;
+                //    $scope.newValue = change.newValue;
+                //    $scope.oldValue = change.oldValue;
+                //});
 
                 //var s2 = Rx.Observable.from(this.todos).subscribe(
                 //    function (x) {
@@ -61,7 +62,7 @@ exports['default'] = function (ngModule) {
 
 module.exports = exports['default'];
 
-},{"rx":15,"rx-angular":14}],2:[function(require,module,exports){
+},{}],2:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, '__esModule', {
@@ -83,23 +84,24 @@ Object.defineProperty(exports, '__esModule', {
 
 exports['default'] = function (ngModule) {
 
-  ngModule.directive('hello', function () {
-    //    require('./hello.styl');
+  ngModule.directive('hello', function ($log) {
+    $log.debug('Setup hello directive');
+
     return {
       restrict: 'E',
       scope: {},
-      //    template: require("hello.html"),
       templateUrl: 'components/hello/hello.html',
       controllerAs: 'vm',
-      controller: /*@ngInject*/function controller() {
-        var vm = this;
+      controller: function controller() {
+        var vm = arguments.length <= 0 || arguments[0] === undefined ? this : arguments[0];
 
-        vm.greeting = 'Hello Webpack';
-      }
-    };
-  });
+        vm.greeting = 'Hello, directive';
+      } //controller
+    }; //return
+  }); //directive
 };
 
+//export
 module.exports = exports['default'];
 
 },{}],4:[function(require,module,exports){
@@ -137,16 +139,29 @@ Object.defineProperty(exports, '__esModule', {
 
 exports['default'] = function (ngModule) {
 
-    ngModule.directive('list', function () {
+    ngModule.directive('list', function ($log, todoSource) {
+        $log.debug('Setup list directive');
         return {
             restrict: 'E',
             scope: {},
-            templateUrl: 'components/list/list.html',
+            //            templateUrl: 'components/list/list.html',
             controllerAs: 'vm',
             controller: /*@ngInject*/function controller() {
                 var vm = this;
+            },
 
-                vm.todos = [{ text: "one" }, { text: "two" }, { text: "three" }];
+            link: function link(scope, elem) {
+
+                todoSource.getSource().subscribe(function (x) {
+                    $log.info(x);
+                    elem.append('<li>' + x + '</li>');
+                }, function (err) {
+                    $log.error(err);
+                }, function () {
+                    $log.info('Completed');
+                });
+
+                // causes infinite loop.. forEach(todo => elem.append('<li>' + todo + '</li>'));
             }
         };
     });
@@ -176,25 +191,26 @@ Object.defineProperty(exports, '__esModule', {
 
 exports['default'] = function (ngModule) {
 
-    ngModule.directive('messages', function (source) {
+    ngModule.directive('messages', function ($log, source) {
+        $log.debug('Setup messages directive');
+
         return {
             restrict: 'E',
             scope: {},
-            templateUrl: 'components/messages/messages.html',
+            //            templateUrl: 'components/messages/messages.html',
             controllerAs: 'vm',
             controller: /*@ngInject*/function controller() {
-                var vm = this;
+                var vm = arguments.length <= 0 || arguments[0] === undefined ? this : arguments[0];
 
                 vm.message = 'Hello Messages';
             },
-
-            link: function link(scope, elem, attrs) {
+            link: function link(scope, elem) {
                 source.filter(function (x) {
                     return x % 2 === 1;
                 }).map(function (x) {
                     return x + '!';
                 }).forEach(function (x) {
-                    return elem.append('<div>' + x + '</div>');
+                    return elem.append('<li>' + x + '</li>');
                 });
             }
         };
@@ -213,16 +229,44 @@ module.exports = exports['default'];
     var Rx = require('rx');
     var RxAngular = require('rx-angular');
 
-    var ngModule = angular.module('app', []);
+    var ngModule = angular.module('app', []).config(function () {
+        var $log = angular.injector(['ng']).get('$log');
+        $log.debug('Config Module');
+    }).run(function ($log) {
+        $log.debug("Running Module");
+    });
 
     ngModule.factory('source', function () {
         return Rx.Observable.interval(500).take(6);
     });
 
-    ngModule.controller('appController', function () {
-        angular.extend(this, {});
+    ngModule.factory('todoSource', function ($log) {
+        $log.debug('Setting up todoSource');
+        var ts = {};
+        var todos = [];
 
-        console.log(this);
+        //        ts.ob = Rx.Observable.from(todos);
+        //        ts.ob = Rx.Observable.ofObjectChanges(todos);
+
+        ts.s = new Rx.Subject();
+
+        ts.addTodo = function (todo) {
+            $log.debug('add todo:' + todo);
+            todos.push({ text: todo });
+            ts.s.onNext(todo);
+        };
+
+        ts.getSource = function () {
+            $log.debug('get todo source');
+            return ts.s;
+        };
+
+        return ts;
+    });
+
+    ngModule.controller('appController', function ($log) {
+        angular.extend(this, {});
+        $log.debug("Loading App Controller");
     });
 
     require('./components/hello')(ngModule);

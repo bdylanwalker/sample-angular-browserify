@@ -1,9 +1,7 @@
-var Rx = require('rx');
-var RxAngular = require('rx-angular');
-
 export default ngModule => {
 
-    ngModule.directive('entry', function(observeOnScope) {
+    ngModule.directive('entry',  ($log, todoSource) => {
+        $log.debug('Setup entry directive');
 
         return {
             restrict: 'E',
@@ -14,14 +12,18 @@ export default ngModule => {
             templateUrl: 'components/entry/entry.html',
             controllerAs: 'vm',
             controller: /*@ngInject*/ function($scope) {
-                angular.extend(this, {
-                    todos: [],
-                    addTodo: () => {
-                        this.todos.push({text:$scope.formValue});
-                        console.log(`in entry directive, adding todo: ${$scope.formValue}`);
-                        $scope.formValue = '';
-                    }
-                });
+                var vm = this;
+
+                //vm.todos = [];
+                //var todoStream = Rx.Observable.from( vm.todos);
+
+                vm.addTodo = function() {
+                    todoSource.addTodo( $scope.formValue);
+
+                    //this.todos.push({text:$scope.formValue});
+                    $log.debug(`in entry directive, adding todo: ${$scope.formValue}`);
+                    $scope.formValue = '';
+                }
 
                 // Listen for changes on the name
                 //observeOnScope($scope, 'formValue').subscribe(function(change) {

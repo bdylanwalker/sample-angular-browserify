@@ -1,19 +1,17 @@
 export default ngModule => {
 
-  ngModule.directive('hello', function() {
-//    require('./hello.styl');
+  ngModule.directive('hello', ($log) => {
+    $log.debug('Setup hello directive');
+
     return {
       restrict: 'E',
       scope: {},
-//    template: require("hello.html"),
       templateUrl: 'components/hello/hello.html',
       controllerAs: 'vm',
-      controller: /*@ngInject*/ function() {
-        const vm = this;
+      controller: function (vm = this) {
+          vm.greeting = 'Hello, directive';
 
-        vm.greeting = 'Hello Webpack';
-      }
-    };
-  });
-
-};
+      } //controller
+    }; //return
+  }); //directive
+}; //export
