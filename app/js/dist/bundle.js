@@ -7,23 +7,54 @@ Object.defineProperty(exports, '__esModule', {
 
 exports['default'] = function (ngModule) {
 
-    ngModule.directive('entry', function (source) {
+    ngModule.directive('entry', function ($log, todoSource) {
+        $log.debug('Setup entry directive');
+
         return {
             restrict: 'E',
             scope: {},
+            bindToController: {
+                formValue: '='
+            },
             templateUrl: 'components/entry/entry.html',
             controllerAs: 'vm',
             controller: /*@ngInject*/function controller($scope) {
                 var vm = this;
 
-                //how to get this back out to the main stream?
-                $scope.todos = [];
+                //vm.todos = [];
+                //var todoStream = Rx.Observable.from( vm.todos);
 
-                $scope.addTodo = function () {
-                    $scope.todos.push({ text: $scope.formValue });
-                    $scope.formTodoText = '';
-                    console.log($scope.formValue);
+                vm.addTodo = function () {
+                    todoSource.addTodo($scope.formValue);
+
+                    //this.todos.push({text:$scope.formValue});
+                    $log.debug('in entry directive, adding todo: ' + $scope.formValue);
+                    $scope.formValue = '';
                 };
+
+                // Listen for changes on the name
+                //observeOnScope($scope, 'formValue').subscribe(function(change) {
+                //    $scope.observedChange = change;
+                //    $scope.newValue = change.newValue;
+                //    $scope.oldValue = change.oldValue;
+                //});
+
+                //var s2 = Rx.Observable.from(this.todos).subscribe(
+                //    function (x) {
+                //        console.log('Next: ' + x);
+                //    },
+                //    function (err) {
+                //        console.log('Error: ' + err);
+                //    },
+                //    function () {
+                //        console.log('Completed');
+                //    });
+
+                //                const vm = this;
+                //how to get this back out to the main stream?
+                //                $scope.todos = [];
+
+                //console.log(this.todos);
             }
         };
     });
@@ -53,23 +84,24 @@ Object.defineProperty(exports, '__esModule', {
 
 exports['default'] = function (ngModule) {
 
-  ngModule.directive('hello', function () {
-    //    require('./hello.styl');
+  ngModule.directive('hello', function ($log) {
+    $log.debug('Setup hello directive');
+
     return {
       restrict: 'E',
       scope: {},
-      //    template: require("hello.html"),
       templateUrl: 'components/hello/hello.html',
       controllerAs: 'vm',
-      controller: /*@ngInject*/function controller() {
-        var vm = this;
+      controller: function controller() {
+        var vm = arguments.length <= 0 || arguments[0] === undefined ? this : arguments[0];
 
-        vm.greeting = 'Hello Webpack';
-      }
-    };
-  });
+        vm.greeting = 'Hello, directive';
+      } //controller
+    }; //return
+  }); //directive
 };
 
+//export
 module.exports = exports['default'];
 
 },{}],4:[function(require,module,exports){
@@ -107,16 +139,29 @@ Object.defineProperty(exports, '__esModule', {
 
 exports['default'] = function (ngModule) {
 
-    ngModule.directive('list', function () {
+    ngModule.directive('list', function ($log, todoSource) {
+        $log.debug('Setup list directive');
         return {
             restrict: 'E',
             scope: {},
-            templateUrl: 'components/list/list.html',
+            //            templateUrl: 'components/list/list.html',
             controllerAs: 'vm',
             controller: /*@ngInject*/function controller() {
                 var vm = this;
+            },
 
-                vm.todos = [{ text: "one" }, { text: "two" }, { text: "three" }];
+            link: function link(scope, elem) {
+
+                todoSource.getSource().subscribe(function (x) {
+                    $log.info(x);
+                    elem.append('<li>' + x + '</li>');
+                }, function (err) {
+                    $log.error(err);
+                }, function () {
+                    $log.info('Completed');
+                });
+
+                // causes infinite loop.. forEach(todo => elem.append('<li>' + todo + '</li>'));
             }
         };
     });
@@ -146,25 +191,26 @@ Object.defineProperty(exports, '__esModule', {
 
 exports['default'] = function (ngModule) {
 
-    ngModule.directive('messages', function (source) {
+    ngModule.directive('messages', function ($log, source) {
+        $log.debug('Setup messages directive');
+
         return {
             restrict: 'E',
             scope: {},
-            templateUrl: 'components/messages/messages.html',
+            //            templateUrl: 'components/messages/messages.html',
             controllerAs: 'vm',
             controller: /*@ngInject*/function controller() {
-                var vm = this;
+                var vm = arguments.length <= 0 || arguments[0] === undefined ? this : arguments[0];
 
                 vm.message = 'Hello Messages';
             },
-
-            link: function link(scope, elem, attrs) {
+            link: function link(scope, elem) {
                 source.filter(function (x) {
                     return x % 2 === 1;
                 }).map(function (x) {
                     return x + '!';
                 }).forEach(function (x) {
-                    return elem.append('<div>' + x + '</div>');
+                    return elem.append('<li>' + x + '</li>');
                 });
             }
         };
@@ -181,11 +227,46 @@ module.exports = exports['default'];
 
     var angular = require('angular');
     var Rx = require('rx');
+    var RxAngular = require('rx-angular');
 
-    var ngModule = angular.module('app', []);
+    var ngModule = angular.module('app', []).config(function () {
+        var $log = angular.injector(['ng']).get('$log');
+        $log.debug('Config Module');
+    }).run(function ($log) {
+        $log.debug("Running Module");
+    });
 
     ngModule.factory('source', function () {
         return Rx.Observable.interval(500).take(6);
+    });
+
+    ngModule.factory('todoSource', function ($log) {
+        $log.debug('Setting up todoSource');
+        var ts = {};
+        var todos = [];
+
+        //        ts.ob = Rx.Observable.from(todos);
+        //        ts.ob = Rx.Observable.ofObjectChanges(todos);
+
+        ts.s = new Rx.Subject();
+
+        ts.addTodo = function (todo) {
+            $log.debug('add todo:' + todo);
+            todos.push({ text: todo });
+            ts.s.onNext(todo);
+        };
+
+        ts.getSource = function () {
+            $log.debug('get todo source');
+            return ts.s;
+        };
+
+        return ts;
+    });
+
+    ngModule.controller('appController', function ($log) {
+        angular.extend(this, {});
+        $log.debug("Loading App Controller");
     });
 
     require('./components/hello')(ngModule);
@@ -194,7 +275,7 @@ module.exports = exports['default'];
     require('./components/list')(ngModule);
 })();
 
-},{"./components/entry":2,"./components/hello":4,"./components/list":5,"./components/messages":7,"angular":11,"rx":13}],10:[function(require,module,exports){
+},{"./components/entry":2,"./components/hello":4,"./components/list":5,"./components/messages":7,"angular":11,"rx":15,"rx-angular":14}],10:[function(require,module,exports){
 /**
  * @license AngularJS v1.4.6
  * (c) 2010-2015 Google, Inc. http://angularjs.org
@@ -29119,6 +29200,458 @@ process.chdir = function (dir) {
 process.umask = function() { return 0; };
 
 },{}],13:[function(require,module,exports){
+(function (global){
+// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
+
+;(function (root, factory) {
+  var objectTypes = {
+    'boolean': false,
+    'function': true,
+    'object': true,
+    'number': false,
+    'string': false,
+    'undefined': false
+  };
+
+  var root = (objectTypes[typeof window] && window) || this,
+    freeExports = objectTypes[typeof exports] && exports && !exports.nodeType && exports,
+    freeModule = objectTypes[typeof module] && module && !module.nodeType && module,
+    moduleExports = freeModule && freeModule.exports === freeExports && freeExports,
+    freeGlobal = objectTypes[typeof global] && global;
+  
+  if (freeGlobal && (freeGlobal.global === freeGlobal || freeGlobal.window === freeGlobal)) {
+    root = freeGlobal;
+  }
+
+  // Because of build optimizers
+  if (typeof define === 'function' && define.amd) {
+    define(['rx', 'angular', 'exports'], function (Rx, angular, exports) {
+      root.Rx = factory(root, exports, Rx, angular);
+      return root.Rx;
+    });
+  } else if (typeof module == 'object' && module && module.exports == freeExports) {
+    module.exports = factory(root, module.exports, require('rx'), require('angular'));
+  } else {
+    root.Rx = factory(root, {}, root.Rx, root.angular);
+  }
+}(this, function (global, exp, Rx, angular, undefined) {
+
+  var observable = Rx.Observable,
+    observableProto = observable.prototype,
+    observableCreate = observable.create,
+    disposableCreate = Rx.Disposable.create,
+    SingleAssignmentDisposable = Rx.SingleAssignmentDisposable,
+    CompositeDisposable = Rx.CompositeDisposable,
+    AnonymousObservable = Rx.AnonymousObservable,
+    Scheduler = Rx.Scheduler,
+    noop = Rx.helpers.noop;
+
+  // Utilities
+  var toString = Object.prototype.toString,
+    slice = Array.prototype.slice;
+
+  /**
+   * @ngdoc overview
+   * @name rx
+   *
+   * @description
+   * The `rx` module contains essential components for reactive extension bindings
+   * for Angular apps.
+   *
+   * Installation of this module is just a cli command away:
+   *
+   * <pre>
+   * bower install rx-angular
+   * <pre>
+   *
+   * Simply declare it as dependency of your app like this:
+   *
+   * <pre>
+   * var app = angular.module('myApp', ['rx']);
+   * </pre>
+   */
+  var rxModule = angular.module('rx', []);
+
+  /**
+   * @ngdoc service
+   * @name rx.rx
+   *
+   * @requires $window
+   *
+   * @description
+   * Factory service that exposes the global `Rx` object to the Angular world.
+   */
+  rxModule.factory('rx', ['$window', function($window) {
+    $window.Rx || ($window.Rx = Rx);
+    return $window.Rx;
+  }]);
+
+  /**
+  * @ngdoc service
+  * @name rx.observeOnSope
+  *
+  * @requires rx.rx
+  *
+  * @description
+  * An observer function that returns a function for a given `scope`,
+  * `watchExpression` and `objectEquality` object. The returned function
+  * delegates to an Angular watcher.
+  *
+  * @param {object} scope Scope object.
+  * @param {(string|object)} watchExpression Watch expression.
+  * @param {boolean} objectEquality Object to compare for object equality.
+  *
+  * @return {function} Factory function that creates obersables.
+  */
+  rxModule.factory('observeOnScope', ['rx', function(rx) {
+    return function(scope, watchExpression, objectEquality) {
+      return rx.Observable.create(function (observer) {
+        // Create function to handle old and new Value
+        function listener (newValue, oldValue) {
+          observer.onNext({ oldValue: oldValue, newValue: newValue });
+        }
+
+        // Returns function which disconnects the $watch expression
+        return scope.$watch(watchExpression, listener, objectEquality);
+      });
+    };
+  }]);
+
+  observableProto.safeApply = function($scope, fn){
+
+    fn = angular.isFunction(fn) ? fn : noop;
+
+    return this['do'](function (data) {
+      ($scope.$$phase || $scope.$root.$$phase) ? fn(data) : $scope.$apply(function () {
+        fn(data);
+      });
+    });
+  };
+
+  rxModule.config(['$provide', function($provide) {
+    /**
+     * @ngdoc service
+     * @name rx.$rootScope
+     *
+     * @requires $delegate
+     *
+     * @description
+     * `$rootScope` decorator that extends the existing `$rootScope` service
+     * with additional methods. These methods are Rx related methods, such as
+     * methods to create observables or observable functions.
+     */
+    $provide.decorator('$rootScope', ['$delegate', function($delegate) {
+
+      Object.defineProperties($delegate.constructor.prototype, {
+        /**
+         * @ngdoc property
+         * @name rx.$rootScope.$toObservable
+         *
+         * @description
+         * Provides a method to create observable methods.
+         */
+        '$toObservable': {
+          /**
+           * @ngdoc function
+           * @name rx.$rootScope.$toObservable#value
+           *
+           * @description
+           * Creates an observable from a watchExpression.
+           *
+           * @param {(function|string)} watchExpression A watch expression.
+           * @param {boolean} objectEquality Compare object for equality.
+           *
+           * @return {object} Observable.
+           */
+          value: function(watchExpression, objectEquality) {
+            var scope = this;
+            return observableCreate(function (observer) {
+              // Create function to handle old and new Value
+              function listener (newValue, oldValue) {
+                observer.onNext({ oldValue: oldValue, newValue: newValue });
+              }
+
+              // Returns function which disconnects the $watch expression
+              var disposable = Rx.Disposable.create(scope.$watch(watchExpression, listener, objectEquality));
+
+              scope.$on('$destroy', function(){
+                disposable.dispose();
+              });
+
+              return disposable;
+            }).publish().refCount();
+          },
+          /**
+           * @ngdoc property
+           * @name rx.$rootScope.$toObservable#enumerable
+           *
+           * @description
+           * Enumerable flag.
+           */
+          enumerable: false,
+          configurable: true,
+          writable: true
+        },
+        /**
+         * @ngdoc property
+         * @name rx.$rootScope.$eventToObservable
+         *
+         * @description
+         * Provides a method to create observable methods.
+         */
+        '$eventToObservable': {
+          /**
+           * @ngdoc function
+           * @name rx.$rootScope.$eventToObservable#value
+           *
+           * @description
+           * Creates an Observable from an event which is fired on the local $scope.
+           * Expects an event name as the only input parameter.
+           *
+           * @param {string} event name
+           *
+           * @return {object} Observable object.
+           */
+          value: function(eventName) {
+            var scope = this;
+            return observableCreate(function (observer) {
+              function listener () {
+                observer.onNext({
+                  'event': arguments[0],
+                  'additionalArguments': slice.call(arguments, 1)
+                });
+              }
+
+              // Returns function which disconnects from the event binding
+              var disposable = disposableCreate(scope.$on(eventName, listener));
+
+              scope.$on('$destroy', function(){
+                disposable.isDisposed || disposable.dispose();
+              });
+
+              return disposable;
+            }).publish().refCount();
+          },
+          /**
+           * @ngdoc property
+           * @name rx.$rootScope.$eventToObservable#enumerable
+           *
+           * @description
+           * Enumerable flag.
+           */
+          enumerable: false,
+          configurable: true,
+          writable: true
+        },
+        /**
+         * @ngdoc property
+         * @name rx.$rootScope.$createObservableFunction
+         *
+         * @description
+         * Provides a method to create obsersables from functions.
+         */
+        '$createObservableFunction': {
+          /**
+           * @ngdoc function
+           * @name rx.$rootScope.$createObservableFunction#value
+           *
+           * @description
+           * Creates an observable from a given function.
+           *
+           * @param {string} functionName A function name to observe.
+           * @param {function} listener A listener function that gets executed.
+           *
+           * @return {function} Remove listener function.
+           */
+          value: function(functionName, listener) {
+            var scope = this;
+
+            return observableCreate(function (observer) {
+              scope[functionName] = function () {
+                if (listener) {
+                  observer.onNext(listener.apply(this, arguments));
+                } else if (arguments.length === 1) {
+                  observer.onNext(arguments[0]);
+                } else {
+                  observer.onNext(arguments);
+                }
+              };
+
+              return function () {
+                // Remove our listener function from the scope.
+                delete scope[functionName];
+              };
+            }).publish().refCount();
+          },
+          /**
+           * @ngdoc property
+           * @name rx.$rootScope.$createObservableFunction#enumerable
+           *
+           * @description
+           * Enumerable flag.
+           */
+          enumerable: false,
+          configurable: true,
+          writable: true
+        },
+        /**
+         * @ngdoc function
+         * @name rx.$rootScope.$digestObservables#value
+         *
+         * @description
+         * Digests the specified observables when they produce new values.
+         * The scope variable specified by the observable's key
+         *   is set to the new value.
+         *
+         * @param {object} obj A map where keys are scope properties
+         *   and values are observables.
+         *
+         * @return {boolean} Reference to obj.
+         */
+        '$digestObservables': {
+          value: function(observables) {
+            var scope = this;
+            return angular.map(observables, function(observable, key) {
+              return observable.digest(scope, key);
+            }).publish().refCount();
+          },
+          /**
+           * @ngdoc property
+           * @name rx.$rootScope.digestObservables#enumerable
+           *
+           * @description
+           * Enumerable flag.
+           */
+          enumerable: false,
+          configurable: true,
+          writable: true
+        }
+      });
+
+      return $delegate;
+    }]);
+  }]);
+
+  rxModule.run(['$parse', function($parse) {
+
+    observableProto.digest = function($scope, prop) {
+      var source = this;
+      return new AnonymousObservable(function (observer) {
+        var propSetter = $parse(prop).assign;
+
+        var m = new SingleAssignmentDisposable();
+
+        m.setDisposable(source.subscribe(
+          function (e) {
+            if (!$scope.$$phase) {
+              $scope.$apply(propSetter($scope, e));
+            } else {
+              propSetter($scope, e);
+            }
+          },
+          observer.onError.bind(observer),
+          observer.onCompleted.bind(observer)
+        ));
+
+        $scope.$on('$destroy', m.dispose.bind(m));
+
+        return m;
+      });
+    };
+  }]);
+
+  var ScopeScheduler = Rx.ScopeScheduler = (function () {
+
+    var now = Date.now || (+new Date());
+
+    function scheduleNow(state, action) {
+      var scheduler = this,
+        disposable = new SingleAssignmentDisposable();
+
+      safeApply(disposable, scheduler, action, state);
+
+      return disposable;
+    }
+
+    function scheduleRelative(state, dueTime, action) {
+      var scheduler = this,
+        dt = Rx.Scheduler.normalize(dueTime);
+
+      if (dt === 0) {
+        return scheduler.scheduleWithState(state, action);
+      }
+
+      var disposable = new SingleAssignmentDisposable();
+      var id = setTimeout(function () {
+        safeApply(disposable, scheduler, action, state);
+      }, dt);
+
+      return new CompositeDisposable(disposable, disposableCreate(function () {
+        clearTimeout(id);
+      }));
+    }
+
+    function safeApply(disposable, scheduler, action, state) {
+      function fn() {
+        !disposable.isDisposed && disposable.setDisposable(action(scheduler, state));
+      }
+
+      (scheduler._scope.$$phase || scheduler._scope.$root.$$phase)
+        ? fn()
+        : scheduler._scope.$apply(fn);
+    }
+
+    function scheduleAbsolute(state, dueTime, action) {
+      return this.scheduleWithRelativeAndState(state, dueTime - this.now(), action);
+    }
+
+    return function (scope) {
+      var scheduler = new Scheduler(now, scheduleNow, scheduleRelative, scheduleAbsolute);
+      scheduler._scope = scope;
+      return scheduler;
+    }
+  }());
+
+  var manageScope = Rx.manageScope = function ($scope) {
+
+    return function(observer) {
+
+        var source = observer;
+
+        return new AnonymousObservable(function (observer) {
+
+            var m = new SingleAssignmentDisposable();
+
+            var scheduler = Rx.ScopeScheduler($scope);
+
+            m.setDisposable(source
+                .observeOn(scheduler)
+                .subscribe(
+                    observer.onNext.bind(observer),
+                    observer.onError.bind(observer),
+                    observer.onCompleted.bind(observer)
+            ));
+
+            $scope.$on("$destroy", function() {
+                m.dispose();
+                delete m;
+            });
+
+            return m;
+        });
+      }
+  }
+
+
+  return Rx;
+}));
+}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
+
+},{"angular":11,"rx":15}],14:[function(require,module,exports){
+require('./dist/rx.angular');
+module.exports = 'rx';
+
+},{"./dist/rx.angular":13}],15:[function(require,module,exports){
 (function (process,global){
 // Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 

@@ -2,17 +2,39 @@
 <html>
 <head lang="en">
     <meta charset="UTF-8">
-    <title>Angular with Webpack</title>
+    <title>Todo Sample App</title>
 </head>
-<body ng-app="app">
-<h1>Angular + Webpack</h1>
-<hello></hello>
-<hr/>
-<entry></entry>
-<hr/>
-<list></list>
-<hr/>
-<messages></messages>
+<body ng-app="app" ng-controller="appController as vm">
+
+<h1>Todo Sample App</h1>
+<p>Uses Angular, Browserify, Gulp, and RxJS.</p>
+
+
+<div id="hello">
+    <h4>Hello</h4>
+    <hello></hello>
+</div>
+
+<div id="entry">
+    <h4>Entry</h4>
+    <entry></entry>
+</div>
+
+<div id="todo-items">
+    <h4>Items</h4>
+    <ul>
+        <list></list>
+    </ul>
+</div>
+<hr>
+
+<div id="msgs">
+    <h4>Messages</h4>
+    <ul>
+        <messages></messages>
+    </ul>
+</div>
+
 <script src="js/dist/bundle.js"></script>
 </body>
 </html>
